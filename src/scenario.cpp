@@ -148,6 +148,8 @@ int sendMode = MODE_CLIENT;
 /* This describes what our 3PCC behavior is. */
 int thirdPartyMode = MODE_3PCC_NONE;
 
+#define KEYWORD_SIZE 256
+
 /*************** Helper functions for various types *****************/
 long get_long(const char *ptr, const char *what)
 {
@@ -240,18 +242,16 @@ static char* xp_get_keyword_value(const char *name)
 {
     const char* ptr = xp_get_value(name);
     size_t len;
+    char keyword[KEYWORD_SIZE + 1];
 
     if (ptr && ptr[0] == '[' && (len = strlen(ptr)) && ptr[len - 1] == ']') {
-        int i = 0;
-        len -= 2; /* without the brackets */
-        while (generic[i]) {
-            const char* keyword = *generic[i];
-            if (strncmp(ptr + 1, keyword, len) == 0 && strlen(keyword) == len) {
-                const char* value = *(generic[i] + 1);
-                return strdup(value);
-            }
-            ++i;
+        memcpy(keyword, ptr + 1, len - 2);
+
+        auto gen = generic.find(keyword);
+        if (gen != generic.end()) {
+            return strdup((*gen).second.c_str());
         }
+
         ERROR("%s \"%s\" looks like a keyword value, but keyword not supplied!", name, ptr);
     }
 
